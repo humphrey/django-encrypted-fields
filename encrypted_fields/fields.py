@@ -1,11 +1,11 @@
 
-import os
-import types
+import binascii
 
 import django
-from django.db import models
+import os
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db import models
 from django.utils.functional import cached_property
 
 try:
@@ -163,7 +163,7 @@ class EncryptedFieldMixin(object):
         return self.to_python(value)
 
     def to_python(self, value):
-        if value is None or not isinstance(value, types.StringTypes):
+        if value is None or not isinstance(value, str):
             return value
 
         if self.prefix and value.startswith(self.prefix):
@@ -171,7 +171,6 @@ class EncryptedFieldMixin(object):
 
         try:
             value = self.crypter().decrypt(value)
-            value = value.decode('unicode_escape')
         except keyczar.errors.KeyczarError:
             pass
         except UnicodeEncodeError:
@@ -187,10 +186,7 @@ class EncryptedFieldMixin(object):
         if value is None or value == '' or self.decrypt_only:
             return value
 
-        if isinstance(value, types.StringTypes):
-            value = value.encode('unicode_escape')
-            value = value.encode('ascii')
-        else:
+        if not isinstance(value, str):
             value = str(value)
 
         return self.prefix + self.crypter().encrypt(value)
